@@ -32,16 +32,7 @@ export default function NotificationsPage() {
   };
 
   const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'event_approval':
-        return '✅';
-      case 'event_reminder':
-        return '🔔';
-      case 'announcement':
-        return '📢';
-      default:
-        return '📬';
-    }
+    return '';
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;

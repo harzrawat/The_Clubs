@@ -68,40 +68,7 @@ export function TopNav({ onMenuClick }: TopNavProps) {
           </Link>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="hidden md:flex items-center gap-6">
-          <Link
-            to="/clubs"
-            className="text-sm font-medium transition-colors hover:text-primary"
-          >
-            Clubs
-          </Link>
-          <Link
-            to="/events"
-            className="text-sm font-medium transition-colors hover:text-primary"
-          >
-            Events
-          </Link>
-          <Link
-            to="/calendar"
-            className="text-sm font-medium transition-colors hover:text-primary"
-          >
-            Calendar
-          </Link>
-          <Link
-            to="/gallery"
-            className="text-sm font-medium transition-colors hover:text-primary"
-          >
-            Gallery
-          </Link>
-          <Link
-            to="/leaderboard"
-            className="text-sm font-medium transition-colors hover:text-primary"
-          >
-            Leaderboard
-          </Link>
-        </nav>
-
+        
         {/* Right Side Actions */}
         <div className="flex items-center gap-2">
           {isAuthenticated ? (
