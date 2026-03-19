@@ -41,8 +41,8 @@ export function SidebarNav({ onLinkClick }: SidebarNavProps) {
   ];
 
   const clubHeadItems = [
-    { path: '/create-event', label: 'Create Event', icon: Plus },
     { path: '/my-events', label: 'My Events', icon: List },
+    { path: '/create-event', label: 'Create Event', icon: Plus },
   ];
 
   const adminItems = [

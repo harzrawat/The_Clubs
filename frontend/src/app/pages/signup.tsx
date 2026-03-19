@@ -96,8 +96,12 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-md">
+    <div className="relative flex min-h-[calc(100vh-8rem)] items-center justify-center overflow-hidden px-4 py-12">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10" />
+      <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-primary/20 blur-3xl auth-orb-animate" />
+      <div className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-accent/20 blur-3xl auth-orb-animate-2" />
+
+      <Card className="auth-card-animate w-full max-w-md shadow-lg">
         <CardHeader className="space-y-1 text-center">
           <CardTitle>Create an Account</CardTitle>
           <CardDescription>

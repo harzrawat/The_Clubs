@@ -87,7 +87,11 @@ export default function CreateEventPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="relative container mx-auto overflow-hidden px-4 py-8">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10" />
+      <div className="pointer-events-none absolute -top-24 -left-24 hidden h-72 w-72 rounded-full bg-primary/20 blur-3xl md:block auth-orb-animate" />
+      <div className="pointer-events-none absolute -bottom-24 -right-24 hidden h-72 w-72 rounded-full bg-accent/20 blur-3xl md:block auth-orb-animate-2" />
+
       <div className="mb-8">
         <h1 className="mb-2">Create New Event</h1>
         <p className="text-muted-foreground">
@@ -95,7 +99,7 @@ export default function CreateEventPage() {
         </p>
       </div>
 
-      <Card className="mx-auto max-w-2xl">
+      <Card className="auth-card-animate mx-auto max-w-2xl shadow-lg">
         <CardHeader>
           <CardTitle>Event Details</CardTitle>
           <CardDescription>

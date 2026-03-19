@@ -45,13 +45,27 @@ export default function ManageUsersPage() {
   const getRoleBadge = (role: string) => {
     switch (role) {
       case 'admin':
-        return <Badge variant="destructive">Admin</Badge>;
+        return (
+          <Badge variant="destructive" className="w-[110px]">
+            Admin
+          </Badge>
+        );
       case 'club_head':
-        return <Badge className="bg-blue-500">Club Head</Badge>;
+        return (
+          <Badge className="bg-blue-500 w-[110px]">Club Head</Badge>
+        );
       case 'student':
-        return <Badge variant="secondary">Student</Badge>;
+        return (
+          <Badge variant="secondary" className="w-[110px]">
+            Student
+          </Badge>
+        );
       default:
-        return <Badge variant="outline">{role}</Badge>;
+        return (
+          <Badge variant="outline" className="w-[110px]">
+            {role}
+          </Badge>
+        );
     }
   };
 
@@ -66,31 +80,35 @@ export default function ManageUsersPage() {
 
       <Card>
         <CardContent className="p-0">
-          <Table>
+          <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Current Role</TableHead>
-                <TableHead>Club</TableHead>
-                <TableHead className="text-right">Change Role</TableHead>
+                <TableHead className="w-[20%]">Name</TableHead>
+                <TableHead className="w-[20%]">Email</TableHead>
+                <TableHead className="w-[20%]">Current Role</TableHead>
+                <TableHead className="w-[20%]">Club</TableHead>
+                <TableHead className="w-[20%]">Change Role</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {users.map(user => (
                 <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{getRoleBadge(user.role)}</TableCell>
-                  <TableCell>
+                  <TableCell className="w-[20%] font-medium">
+                    {user.name}
+                  </TableCell>
+                  <TableCell className="w-[20%]">{user.email}</TableCell>
+                  <TableCell className="w-[20%]">
+                    {getRoleBadge(user.role)}
+                  </TableCell>
+                  <TableCell className="w-[20%]">
                     {user.clubId ? `Club ${user.clubId}` : '—'}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="w-[20%]">
                     <Select
                       value={user.role}
                       onValueChange={role => handleRoleChange(user.id, role)}
                     >
-                      <SelectTrigger className="w-[150px]">
+                      <SelectTrigger className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
