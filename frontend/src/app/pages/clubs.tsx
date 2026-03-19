@@ -93,8 +93,11 @@ export default function ClubsPage() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredClubs.map(club => (
-            <Card key={club.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
+            <Card
+              key={club.id}
+              className="flex h-full flex-col hover:shadow-lg transition-shadow"
+            >
+              <CardHeader className="flex-1">
                 <div className="mb-3 flex items-start justify-between">
                   <Badge variant="secondary">{club.category}</Badge>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">

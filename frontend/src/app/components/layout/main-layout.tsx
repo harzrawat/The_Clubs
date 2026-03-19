@@ -30,7 +30,7 @@ export function MainLayout() {
             {/* Sidebar */}
             <div
               className={cn(
-                'fixed left-0 top-16 z-50 md:sticky md:top-16 md:block',
+                'fixed left-0 top-16 z-40 md:sticky md:top-16 md:block',
                 sidebarOpen ? 'block' : 'hidden md:block'
               )}
             >

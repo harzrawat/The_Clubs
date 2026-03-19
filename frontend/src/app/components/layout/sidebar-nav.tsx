@@ -56,8 +56,62 @@ export function SidebarNav({ onLinkClick }: SidebarNavProps) {
   return (
     <aside className="w-64 border-r bg-card h-[calc(100vh-4rem)] overflow-y-auto">
       <nav className="space-y-1 p-4">
-        {/* Common Navigation */}
-        <div className="space-y-1">
+        {/* Admin Specific - shown at top for admins */}
+        {user?.role === 'admin' && (
+          <div className="my-4 border-b pb-4">
+            <h3 className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">
+              Administration
+            </h3>
+            <div className="space-y-1">
+              {adminItems.map(item => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={onLinkClick}
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                    isActive(item.path)
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Club Head Specific - shown at top for club_head (and below admin section for admins) */}
+        {(user?.role === 'club_head' || user?.role === 'admin') && (
+          <div className="my-4 border-b pb-4">
+            <h3 className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">
+              Club Management
+            </h3>
+            <div className="space-y-1">
+              {clubHeadItems.map(item => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={onLinkClick}
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                    isActive(item.path)
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Common Navigation - shown after role-specific sections */}
+        <div className="space-y-1 pt-2">
           {navItems.map(item => (
             <Link
               key={item.path}
@@ -75,64 +129,6 @@ export function SidebarNav({ onLinkClick }: SidebarNavProps) {
             </Link>
           ))}
         </div>
-
-        {/* Club Head Specific */}
-        {(user?.role === 'club_head' || user?.role === 'admin') && (
-          <>
-            <div className="my-4 border-t pt-4">
-              <h3 className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">
-                Club Management
-              </h3>
-              <div className="space-y-1">
-                {clubHeadItems.map(item => (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={onLinkClick}
-                    className={cn(
-                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                      isActive(item.path)
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Admin Specific */}
-        {user?.role === 'admin' && (
-          <>
-            <div className="my-4 border-t pt-4">
-              <h3 className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">
-                Administration
-              </h3>
-              <div className="space-y-1">
-                {adminItems.map(item => (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={onLinkClick}
-                    className={cn(
-                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                      isActive(item.path)
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
       </nav>
     </aside>
   );

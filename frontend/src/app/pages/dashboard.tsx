@@ -1,7 +1,7 @@
 // Dashboard Page - For authenticated users
 
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -12,11 +12,17 @@ import { useAuth } from '../lib/auth-context';
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [userClub, setUserClub] = useState<Club | null>(null);
 
   useEffect(() => {
+    if (!user) {
+      navigate('/', { replace: true });
+      return;
+    }
+
     api.getEvents().then(events => {
       const upcoming = events
         .filter(e => e.status === 'approved' && new Date(e.date) >= new Date())
@@ -33,7 +39,7 @@ export default function DashboardPage() {
         if (club) setUserClub(club);
       });
     }
-  }, [user]);
+  }, [user, navigate]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
