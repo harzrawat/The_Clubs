@@ -7,6 +7,7 @@ import { Footer } from './footer';
 import { useAuth } from '../../lib/auth-context';
 import { useState } from 'react';
 import { cn } from '../ui/utils';
+import { BreadcrumbsBar } from './breadcrumbs-bar';
 
 export function MainLayout() {
   const { isAuthenticated } = useAuth();
@@ -41,6 +42,7 @@ export function MainLayout() {
         
         {/* Main Content */}
         <main className="flex-1 bg-background">
+          <BreadcrumbsBar />
           <Outlet />
         </main>
       </div>

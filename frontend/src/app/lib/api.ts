@@ -128,7 +128,35 @@ export const api = {
   async getNotifications(): Promise<Notification[]> {
     await delay(300);
     // In production: GET /notifications
-    return mockNotifications;
+    // Role-based filtering (so admins don't see student reminders, etc.)
+    // We read the current logged-in user from localStorage (AuthProvider already stores it).
+    let role: string | null = null;
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser) as Partial<User>;
+        role = (parsed.role as string) || null;
+      }
+    } catch {
+      role = null;
+    }
+
+    if (!role) return [];
+
+    const allowedTypes = new Set<Notification['type']>();
+    if (role === 'admin') {
+      allowedTypes.add('event_approval');
+      allowedTypes.add('announcement');
+    } else if (role === 'club_head') {
+      allowedTypes.add('event_approval');
+      allowedTypes.add('event_reminder');
+      allowedTypes.add('announcement');
+    } else if (role === 'student') {
+      allowedTypes.add('event_reminder');
+      allowedTypes.add('announcement');
+    }
+
+    return mockNotifications.filter(n => allowedTypes.has(n.type));
   },
 
   async markNotificationRead(id: string): Promise<void> {
