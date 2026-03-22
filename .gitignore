@@ -1,0 +1,4 @@
+# Repo root (monorepo)
+.DS_Store
+Thumbs.db
+*.log

@@ -1,226 +1,239 @@
-// Mock API service for Student Club Management System
-// In production, these would call the Flask backend REST APIs
+// API client for Student Club Management System (Flask backend)
 
-import { Club, Event, Notification, GalleryImage, User } from './types';
-import { mockClubs, mockEvents, mockNotifications, mockGalleryImages, mockUsers } from './mock-data';
+import { Club, Event, GalleryImage, Notification, User } from './types';
 
-// Simulated delay for API calls
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
-// Authentication
+const AUTH_TOKEN_KEY = 'auth_token';
+
+function getToken(): string | null {
+  return localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+export function setAuthToken(token: string | null) {
+  if (token) {
+    localStorage.setItem(AUTH_TOKEN_KEY, token);
+  } else {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+  }
+}
+
+async function parseJson<T>(res: Response): Promise<T | null> {
+  const text = await res.text();
+  if (!text) return null;
+  return JSON.parse(text) as T;
+}
+
+async function request<T>(
+  path: string,
+  init?: RequestInit & { json?: unknown }
+): Promise<T> {
+  const headers: Record<string, string> = {
+    ...((init?.headers as Record<string, string>) || {}),
+  };
+  const token = getToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  let body: BodyInit | undefined = init?.body as BodyInit | undefined;
+  if (init?.json !== undefined) {
+    headers['Content-Type'] = 'application/json';
+    body = JSON.stringify(init.json);
+  }
+
+  const res = await fetch(`${API_BASE}/api${path}`, {
+    ...init,
+    headers,
+    body,
+  });
+
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
+  const data = await parseJson<{ message?: string } & Record<string, unknown>>(res);
+  if (!res.ok) {
+    const msg =
+      (data && typeof data.message === 'string' && data.message) ||
+      res.statusText ||
+      'Request failed';
+    throw new Error(msg);
+  }
+  return data as T;
+}
+
 export const api = {
-  // Auth
   async login(email: string, password: string): Promise<{ user: User; token: string }> {
-    await delay(500);
-    // Mock login - in production, would call POST /auth/login
-    const user = mockUsers.find(u => u.email === email) || mockUsers[3];
-    return { user, token: 'mock-token-' + Math.random() };
+    const data = await request<{ user: User; token: string }>('/auth/login', {
+      method: 'POST',
+      json: { email, password },
+    });
+    setAuthToken(data.token);
+    return data;
   },
 
-  async signup(name: string, email: string, password: string, clubId?: string): Promise<{ user: User }> {
-    await delay(500);
-    // Mock signup - in production, would call POST /auth/signup
-    const newUser: User = {
-      id: 'user-' + Date.now(),
-      name,
-      email,
-      role: 'student',
-      clubId,
-    };
-    return { user: newUser };
+  async signup(
+    name: string,
+    email: string,
+    password: string,
+    clubId?: string
+  ): Promise<{ user: User }> {
+    const data = await request<{ user: User; token: string }>('/auth/signup', {
+      method: 'POST',
+      json: { name, email, password, clubId: clubId || undefined },
+    });
+    setAuthToken(data.token);
+    return { user: data.user };
   },
 
-  // Clubs
   async getClubs(): Promise<Club[]> {
-    await delay(300);
-    // In production: GET /clubs
-    return mockClubs;
+    return request<Club[]>('/clubs', { method: 'GET' });
   },
 
   async getClubById(id: string): Promise<Club | undefined> {
-    await delay(300);
-    // In production: GET /clubs/:id
-    return mockClubs.find(c => c.id === id);
+    try {
+      return await request<Club>(`/clubs/${encodeURIComponent(id)}`, { method: 'GET' });
+    } catch {
+      return undefined;
+    }
   },
 
   async createClub(clubData: Partial<Club>): Promise<Club> {
-    await delay(500);
-    // In production: POST /clubs
-    const newClub: Club = {
-      id: 'club-' + Date.now(),
-      name: clubData.name || '',
-      description: clubData.description || '',
-      category: clubData.category || '',
-      memberCount: 0,
-      points: 0,
-      headId: clubData.headId || '',
-      createdAt: new Date().toISOString(),
-    };
-    return newClub;
+    return request<Club>('/clubs', {
+      method: 'POST',
+      json: {
+        name: clubData.name,
+        description: clubData.description,
+        category: clubData.category,
+        headId: clubData.headId,
+        logo: clubData.logo,
+      },
+    });
   },
 
   async updateClub(id: string, clubData: Partial<Club>): Promise<Club> {
-    await delay(500);
-    // In production: PUT /clubs/:id
-    const club = mockClubs.find(c => c.id === id);
-    return { ...club!, ...clubData };
+    return request<Club>(`/clubs/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      json: {
+        name: clubData.name,
+        description: clubData.description,
+        category: clubData.category,
+        points: clubData.points,
+        headId: clubData.headId,
+        logo: clubData.logo,
+      },
+    });
   },
 
   async deleteClub(id: string): Promise<void> {
-    await delay(500);
-    // In production: DELETE /clubs/:id
+    await request<void>(`/clubs/${encodeURIComponent(id)}`, { method: 'DELETE' });
   },
 
-  // Events
   async getEvents(): Promise<Event[]> {
-    await delay(300);
-    // In production: GET /events
-    return mockEvents;
+    return request<Event[]>('/events', { method: 'GET' });
   },
 
   async getEventById(id: string): Promise<Event | undefined> {
-    await delay(300);
-    // In production: GET /events/:id
-    return mockEvents.find(e => e.id === id);
+    try {
+      return await request<Event>(`/events/${encodeURIComponent(id)}`, { method: 'GET' });
+    } catch {
+      return undefined;
+    }
   },
 
   async createEvent(eventData: Partial<Event>): Promise<Event> {
-    await delay(500);
-    // In production: POST /events/create
-    const club = mockClubs.find(c => c.id === eventData.clubId);
-    const newEvent: Event = {
-      id: 'event-' + Date.now(),
-      title: eventData.title || '',
-      description: eventData.description || '',
-      date: eventData.date || '',
-      time: eventData.time || '',
-      location: eventData.location || '',
-      clubId: eventData.clubId || '',
-      clubName: club?.name || '',
-      status: 'pending',
-      createdBy: eventData.createdBy || '',
-    };
-    return newEvent;
+    return request<Event>('/events', {
+      method: 'POST',
+      json: {
+        title: eventData.title,
+        description: eventData.description,
+        date: eventData.date,
+        time: eventData.time,
+        location: eventData.location,
+        clubId: eventData.clubId,
+        createdBy: eventData.createdBy,
+        attendanceCount: eventData.attendanceCount,
+      },
+    });
   },
 
   async updateEvent(id: string, eventData: Partial<Event>): Promise<Event> {
-    await delay(500);
-    // In production: PUT /events/:id
-    const event = mockEvents.find(e => e.id === id);
-    return { ...event!, ...eventData };
+    return request<Event>(`/events/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      json: {
+        title: eventData.title,
+        description: eventData.description,
+        date: eventData.date,
+        time: eventData.time,
+        location: eventData.location,
+        status: eventData.status,
+        attendanceCount: eventData.attendanceCount,
+      },
+    });
   },
 
   async approveEvent(id: string): Promise<Event> {
-    await delay(500);
-    // In production: POST /approve/event
-    const event = mockEvents.find(e => e.id === id);
-    return { ...event!, status: 'approved' };
+    return request<Event>(`/events/${encodeURIComponent(id)}/approve`, {
+      method: 'POST',
+    });
   },
 
   async rejectEvent(id: string): Promise<Event> {
-    await delay(500);
-    // In production: POST /reject/event
-    const event = mockEvents.find(e => e.id === id);
-    return { ...event!, status: 'rejected' };
+    return request<Event>(`/events/${encodeURIComponent(id)}/reject`, {
+      method: 'POST',
+    });
   },
 
-  // Notifications
   async getNotifications(): Promise<Notification[]> {
-    await delay(300);
-    // In production: GET /notifications
-    // Role-based filtering (so admins don't see student reminders, etc.)
-    // We read the current logged-in user from localStorage (AuthProvider already stores it).
-    let role: string | null = null;
-    try {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        const parsed = JSON.parse(storedUser) as Partial<User>;
-        role = (parsed.role as string) || null;
-      }
-    } catch {
-      role = null;
-    }
-
-    if (!role) return [];
-
-    const allowedTypes = new Set<Notification['type']>();
-    if (role === 'admin') {
-      allowedTypes.add('event_approval');
-      allowedTypes.add('announcement');
-    } else if (role === 'club_head') {
-      allowedTypes.add('event_approval');
-      allowedTypes.add('event_reminder');
-      allowedTypes.add('announcement');
-    } else if (role === 'student') {
-      allowedTypes.add('event_reminder');
-      allowedTypes.add('announcement');
-    }
-
-    return mockNotifications.filter(n => allowedTypes.has(n.type));
+    return request<Notification[]>('/notifications', { method: 'GET' });
   },
 
   async markNotificationRead(id: string): Promise<void> {
-    await delay(200);
-    // In production: PUT /notifications/:id/read
+    await request<void>(`/notifications/${encodeURIComponent(id)}/read`, {
+      method: 'PUT',
+    });
   },
 
-  // Gallery
   async getGalleryImages(): Promise<GalleryImage[]> {
-    await delay(300);
-    // In production: GET /gallery
-    return mockGalleryImages;
+    return request<GalleryImage[]>('/gallery', { method: 'GET' });
   },
 
   async uploadGalleryImage(eventId: string, imageFile: File): Promise<GalleryImage> {
-    await delay(1000);
-    // In production: POST /gallery/upload
-    const event = mockEvents.find(e => e.id === eventId);
-    return {
-      id: 'img-' + Date.now(),
-      eventId,
-      eventName: event?.title || '',
-      url: URL.createObjectURL(imageFile),
-      uploadedAt: new Date().toISOString(),
-    };
+    const token = getToken();
+    const fd = new FormData();
+    fd.append('file', imageFile);
+    fd.append('eventId', eventId);
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const res = await fetch(`${API_BASE}/api/gallery/upload`, {
+      method: 'POST',
+      headers,
+      body: fd,
+    });
+    const data = await parseJson<GalleryImage & { message?: string }>(res);
+    if (!res.ok) {
+      throw new Error((data && (data as { message?: string }).message) || res.statusText);
+    }
+    return data as GalleryImage;
   },
 
-  // Users
   async getUsers(): Promise<User[]> {
-    await delay(300);
-    // In production: GET /users
-    return mockUsers;
+    return request<User[]>('/users', { method: 'GET' });
   },
 
   async updateUserRole(userId: string, role: string): Promise<User> {
-    await delay(500);
-    // In production: PUT /users/:id/role
-    const user = mockUsers.find(u => u.id === userId);
-    return { ...user!, role: role as any };
+    return request<User>(`/users/${encodeURIComponent(userId)}/role`, {
+      method: 'PUT',
+      json: { role },
+    });
   },
 
-  // Reports
-  async getYearlyReport(year: number): Promise<any> {
-    await delay(500);
-    // In production: GET /yearly-report?year=:year
-    return {
-      year,
-      totalEvents: 45,
-      totalClubs: 12,
-      totalParticipants: 890,
-      monthlyData: [
-        { month: 'Jan', events: 3 },
-        { month: 'Feb', events: 5 },
-        { month: 'Mar', events: 7 },
-        { month: 'Apr', events: 8 },
-        { month: 'May', events: 6 },
-        { month: 'Jun', events: 4 },
-        { month: 'Jul', events: 2 },
-        { month: 'Aug', events: 3 },
-        { month: 'Sep', events: 5 },
-        { month: 'Oct', events: 7 },
-        { month: 'Nov', events: 8 },
-        { month: 'Dec', events: 4 },
-      ],
-    };
+  async getYearlyReport(year: number): Promise<unknown> {
+    return request(`/reports/yearly?year=${encodeURIComponent(String(year))}`, {
+      method: 'GET',
+    });
   },
 };

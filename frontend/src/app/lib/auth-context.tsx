@@ -1,6 +1,7 @@
 // Authentication Context for managing user state
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { setAuthToken } from './api';
 import { User } from './types';
 
 interface AuthContextType {
@@ -30,6 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     setUser(null);
+    setAuthToken(null);
     localStorage.removeItem('user');
   };
 
