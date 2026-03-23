@@ -79,7 +79,9 @@ class Notification(db.Model):
     type = db.Column(db.String(64), nullable=False)
     title = db.Column(db.String(255), nullable=False)
     message = db.Column(db.Text, nullable=False)
+    club_id = db.Column(db.String(64), db.ForeignKey("club.id"), nullable=True) # Targeting!
     created_at = db.Column(db.String(64), nullable=False)
+
 
 
 class NotificationRead(db.Model):

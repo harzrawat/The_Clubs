@@ -33,12 +33,15 @@ export function SidebarNav({ onLinkClick }: SidebarNavProps) {
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/clubs', label: 'Clubs', icon: Users },
+    { path: '/memberships', label: 'My Clubs', icon: List },
+
     { path: '/events', label: 'Events', icon: Calendar },
     { path: '/calendar', label: 'Calendar', icon: Calendar },
     { path: '/gallery', label: 'Gallery', icon: Image },
     { path: '/leaderboard', label: 'Leaderboard', icon: Trophy },
     { path: '/notifications', label: 'Notifications', icon: Bell },
   ];
+
 
   const clubHeadItems = [
     { path: '/my-events', label: 'My Events', icon: List },

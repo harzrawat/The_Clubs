@@ -19,6 +19,9 @@ import DashboardPage from './pages/dashboard';
 import NotificationsPage from './pages/notifications';
 import CreateEventPage from './pages/create-event';
 import MyEventsPage from './pages/my-events';
+import MyClubsPage from './pages/memberships';
+
+
 
 // Admin pages
 import AdminDashboardPage from './pages/admin/admin-dashboard';
@@ -56,8 +59,11 @@ export const router = createBrowserRouter([
       // Authenticated user routes
       { path: 'dashboard', Component: DashboardPage },
       { path: 'notifications', Component: NotificationsPage },
+      { path: 'memberships', Component: MyClubsPage },
+      { path: 'my-clubs', Component: MyClubsPage },
       { path: 'create-event', Component: CreateEventPage },
       { path: 'my-events', Component: MyEventsPage },
+
 
       // Admin routes
       { path: 'admin/dashboard', Component: AdminDashboardPage },

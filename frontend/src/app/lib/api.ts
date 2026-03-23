@@ -91,6 +91,10 @@ export const api = {
     return request<Club[]>('/clubs', { method: 'GET' });
   },
 
+  async getMyClubs(): Promise<Club[]> {
+    return request<Club[]>('/clubs/my', { method: 'GET' });
+  },
+
   async getClubById(id: string): Promise<Club | undefined> {
     try {
       return await request<Club>(`/clubs/${encodeURIComponent(id)}`, { method: 'GET' });
@@ -99,7 +103,12 @@ export const api = {
     }
   },
 
+  async joinClub(id: string): Promise<void> {
+    await request<void>(`/clubs/${encodeURIComponent(id)}/join`, { method: 'POST' });
+  },
+
   async createClub(clubData: Partial<Club>): Promise<Club> {
+
     return request<Club>('/clubs', {
       method: 'POST',
       json: {
@@ -185,7 +194,12 @@ export const api = {
     });
   },
 
+  async deleteEvent(id: string): Promise<void> {
+    await request<void>(`/events/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  },
+
   async getNotifications(): Promise<Notification[]> {
+
     return request<Notification[]>('/notifications', { method: 'GET' });
   },
 
@@ -218,6 +232,10 @@ export const api = {
       throw new Error((data && (data as { message?: string }).message) || res.statusText);
     }
     return data as GalleryImage;
+  },
+
+  async deleteGalleryImage(id: string): Promise<void> {
+    await request<void>(`/gallery/${encodeURIComponent(id)}`, { method: 'DELETE' });
   },
 
   async getUsers(): Promise<User[]> {

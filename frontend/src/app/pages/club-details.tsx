@@ -13,7 +13,8 @@ import { toast } from 'sonner';
 
 export default function ClubDetailsPage() {
   const { id } = useParams();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+
   const [club, setClub] = useState<Club | null>(null);
   const [clubEvents, setClubEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,13 +32,28 @@ export default function ClubDetailsPage() {
     }
   }, [id]);
 
-  const handleJoinClub = () => {
+  const isMember = user?.joinedClubIds?.includes(id || '');
+
+  const handleJoinClub = async () => {
     if (!isAuthenticated) {
       toast.error('Please login to join clubs');
       return;
     }
-    toast.success('Successfully joined ' + club?.name);
+    if (!id) return;
+
+    try {
+      await api.joinClub(id);
+      toast.success('Successfully joined ' + club?.name);
+      // Refresh club data to update member count
+      const updatedClub = await api.getClubById(id);
+      if (updatedClub) setClub(updatedClub);
+      // Note: In a real app, we'd also update the user context's joinedClubIds here
+      // For now, refreshing or re-navigating will pick up the change from serializers
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to join club');
+    }
   };
+
 
   if (loading) {
     return (
@@ -75,9 +91,14 @@ export default function ClubDetailsPage() {
               <h1 className="mb-2">{club.name}</h1>
               <p className="text-muted-foreground">{club.description}</p>
             </div>
-            <Button size="lg" onClick={handleJoinClub}>
-              Join Club
+            <Button 
+                size="lg" 
+                onClick={handleJoinClub}
+                disabled={isMember || user?.role === 'admin' || user?.role === 'club_head'}
+            >
+              {isMember ? 'Member' : 'Join Club'}
             </Button>
+
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

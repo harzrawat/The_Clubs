@@ -25,6 +25,44 @@ def list_clubs():
     return jsonify([club_to_dict(c) for c in clubs]), 200
 
 
+@bp.route("/my", methods=["GET"])
+@jwt_required()
+def list_my_clubs():
+    from flask_jwt_extended import get_jwt_identity
+    from app.models import ClubMember
+    uid = get_jwt_identity()
+    memberships = ClubMember.query.filter_by(user_id=uid).all()
+    club_ids = [m.club_id for m in memberships]
+    clubs = Club.query.filter(Club.id.in_(club_ids)).all() if club_ids else []
+    return jsonify([club_to_dict(c) for c in clubs]), 200
+
+
+@bp.route("/<cid>/join", methods=["POST"])
+@jwt_required()
+def join_club(cid):
+    from flask_jwt_extended import get_jwt_identity
+    from app.models import ClubMember
+    uid = get_jwt_identity()
+    user = db.session.get(User, uid)
+    if not user:
+        return jsonify({"message": "Unauthorized"}), 401
+    
+    club = db.session.get(Club, cid)
+    if not club:
+        return jsonify({"message": "Club not found"}), 404
+    
+    existing = ClubMember.query.filter_by(user_id=uid, club_id=cid).first()
+    if existing:
+        return jsonify({"message": "Already a member"}), 400
+    
+    db.session.add(ClubMember(user_id=uid, club_id=cid))
+    club.member_count = (club.member_count or 0) + 1
+    db.session.commit()
+    
+    return jsonify({"message": "Joined successfully"}), 200
+
+
+
 @bp.route("/<cid>", methods=["GET"])
 def get_club(cid):
     c = db.session.get(Club, cid)

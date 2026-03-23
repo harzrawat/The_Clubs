@@ -30,10 +30,22 @@ def list_notifications():
         return jsonify([]), 200
 
     rows = Notification.query.order_by(Notification.created_at.desc()).all()
+    
+    # Pre-fetch user's club memberships for efficient filtering
+    user_club_ids = {user.club_id} if user.club_id else set()
+    if user.role == "student":
+        user_club_ids.update(m.club_id for m in user.memberships)
+
     out = []
     for n in rows:
         if n.type not in allowed:
             continue
+            
+        # Club-specific filtering
+        if n.club_id and user.role != "admin":
+            if n.club_id not in user_club_ids:
+                continue
+
         nr = NotificationRead.query.filter_by(
             user_id=uid, notification_id=n.id
         ).first()

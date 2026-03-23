@@ -3,15 +3,19 @@ from app.models import Club, Event, GalleryImage, Notification, User
 
 
 def user_to_dict(u: User) -> dict:
+    from app.models import ClubMember
+    joined_ids = [m.club_id for m in ClubMember.query.filter_by(user_id=u.id).all()]
     d = {
         "id": u.id,
         "name": u.name,
         "email": u.email,
         "role": u.role,
+        "joinedClubIds": joined_ids,
     }
     if u.club_id:
         d["clubId"] = u.club_id
     return d
+
 
 
 def club_to_dict(c: Club) -> dict:
@@ -62,10 +66,15 @@ def notification_to_dict(n: Notification, read: bool) -> dict:
 def gallery_to_dict(g: GalleryImage) -> dict:
     ev = db.session.get(Event, g.event_id)
     event_name = ev.title if ev else ""
+    club = db.session.get(Club, ev.club_id) if ev else None
+    club_id = ev.club_id if ev else ""
+    club_name = club.name if club else ""
     return {
         "id": g.id,
         "eventId": g.event_id,
         "eventName": event_name,
+        "clubId": club_id,
+        "clubName": club_name,
         "url": g.url,
         "uploadedAt": g.uploaded_at,
     }

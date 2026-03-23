@@ -1,24 +1,31 @@
-// Calendar Page
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { api } from '../lib/api';
+import { useAuth } from '../lib/auth-context';
 import { Event } from '../lib/types';
 
 export default function CalendarPage() {
+  const { user } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const loadEvents = useCallback(() => {
+    setLoading(true);
+    api.getEvents()
+      .then(data => {
+        setEvents(data);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   useEffect(() => {
-    api.getEvents().then(data => {
-      const approved = data.filter(e => e.status === 'approved');
-      setEvents(approved);
-    });
-  }, []);
+    loadEvents();
+  }, [loadEvents]);
 
   const daysInMonth = new Date(
     currentDate.getFullYear(),
@@ -60,6 +67,27 @@ export default function CalendarPage() {
         );
       })
     : [];
+
+  const handleDeleteEvent = async (eventId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this event? This will completely remove it and notify the club members.')) {
+      return;
+    }
+
+    try {
+      await api.deleteEvent(eventId);
+      setEvents(prev => prev.filter(ev => ev.id !== eventId));
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete event');
+    }
+  };
+
+  const canDeleteEvent = (event: Event) => {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    if (user.role === 'club_head' && user.clubId === event.clubId) return true;
+    return false;
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -172,13 +200,24 @@ export default function CalendarPage() {
           <CardContent>
             <div className="space-y-4">
               {selectedDateEvents.map(event => (
-                <div key={event.id} className="rounded-lg border p-4">
-                  <div className="mb-2">
+                <div key={event.id} className="relative rounded-lg border p-4">
+                  <div className="mb-2 flex items-start justify-between">
                     <Badge variant="secondary" className="mb-1">
                       {event.clubName}
                     </Badge>
+                    {canDeleteEvent(event) && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        onClick={(e) => handleDeleteEvent(event.id, e)}
+                        title="Delete event"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
-                  <h4 className="mb-1">{event.title}</h4>
+                  <h4 className="mb-1 font-semibold">{event.title}</h4>
                   <p className="mb-2 text-sm text-muted-foreground line-clamp-2">
                     {event.description}
                   </p>
@@ -195,3 +234,4 @@ export default function CalendarPage() {
     </div>
   );
 }
+

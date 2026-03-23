@@ -8,7 +8,9 @@ export interface User {
   email: string;
   role: UserRole;
   clubId?: string;
+  joinedClubIds?: string[];
 }
+
 
 export interface Club {
   id: string;
@@ -50,6 +52,8 @@ export interface GalleryImage {
   id: string;
   eventId: string;
   eventName: string;
+  clubId: string;
+  clubName: string;
   url: string;
   uploadedAt: string;
 }
