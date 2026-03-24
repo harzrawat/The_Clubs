@@ -44,8 +44,6 @@ def seed_if_empty():
                 club_id=cid,
             )
         )
-    # Commit users first so they can be referenced as club heads
-    db.session.commit()
 
     clubs_data = [
         (
@@ -83,7 +81,7 @@ def seed_if_empty():
             "Robotics Club",
             "Building and programming robots for competitions and demonstrations.",
             "Technology",
-            84,
+            38,
             410,
             "user5",
             "2025-02-10",
@@ -123,8 +121,6 @@ def seed_if_empty():
                 created_at=created,
             )
         )
-    # Commit clubs so they can be referenced by events and members
-    db.session.commit()
 
     for uid, club_id in [
         ("user2", "1"),
