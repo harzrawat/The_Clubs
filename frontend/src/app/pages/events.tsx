@@ -17,8 +17,10 @@ export default function EventsPage() {
     });
   }, []);
 
-  const upcomingEvents = events.filter(e => new Date(e.date) >= new Date());
-  const pastEvents = events.filter(e => new Date(e.date) < new Date());
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const upcomingEvents = events.filter(e => new Date(e.date) >= today);
+  const pastEvents = events.filter(e => new Date(e.date) < today);
 
   return (
     <div className="container mx-auto px-4 py-8">

@@ -16,6 +16,7 @@ export default function DashboardPage() {
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [userClub, setUserClub] = useState<Club | null>(null);
+  const [myClubs, setMyClubs] = useState<Club[]>([]);
 
   useEffect(() => {
     if (!user) {
@@ -24,8 +25,10 @@ export default function DashboardPage() {
     }
 
     api.getEvents().then(events => {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const upcoming = events
-        .filter(e => e.status === 'approved' && new Date(e.date) >= new Date())
+        .filter(e => e.status === 'approved' && new Date(e.date) >= today)
         .slice(0, 5);
       setUpcomingEvents(upcoming);
     });
@@ -37,6 +40,12 @@ export default function DashboardPage() {
     if (user?.clubId) {
       api.getClubById(user.clubId).then(club => {
         if (club) setUserClub(club);
+      });
+    }
+    
+    if (user?.role === 'student') {
+      api.getMyClubs().then(clubs => {
+        setMyClubs(clubs);
       });
     }
   }, [user, navigate]);
@@ -65,7 +74,20 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {userClub && (
+        {user?.role === 'student' ? (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Joined Clubs</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{myClubs.length}</div>
+              <p className="text-xs text-muted-foreground">
+                Total clubs joined
+              </p>
+            </CardContent>
+          </Card>
+        ) : userClub ? (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">My Club</CardTitle>
@@ -78,7 +100,7 @@ export default function DashboardPage() {
               </p>
             </CardContent>
           </Card>
-        )}
+        ) : null}
 
         {userClub && (
           <Card>

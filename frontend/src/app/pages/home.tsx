@@ -16,8 +16,10 @@ export default function Home() {
   useEffect(() => {
     api.getClubs().then(clubs => setFeaturedClubs(clubs.slice(0, 3)));
     api.getEvents().then(events => {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const upcoming = events
-        .filter(e => e.status === 'approved' && new Date(e.date) >= new Date())
+        .filter(e => e.status === 'approved' && new Date(e.date) >= today)
         .slice(0, 3);
       setUpcomingEvents(upcoming);
     });
@@ -115,8 +117,8 @@ export default function Home() {
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {featuredClubs.map(club => (
-              <Card key={club.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
+              <Card key={club.id} className="h-full hover:shadow-lg transition-shadow">
+                <CardHeader className="flex-1">
                   <div className="mb-2 flex items-center justify-between">
                     <Badge variant="secondary">{club.category}</Badge>
                     <span className="text-sm text-muted-foreground">
@@ -150,8 +152,8 @@ export default function Home() {
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {upcomingEvents.map(event => (
-              <Card key={event.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
+              <Card key={event.id} className="h-full hover:shadow-lg transition-shadow">
+                <CardHeader className="flex-1">
                   <div className="mb-2 flex items-center justify-between text-sm text-muted-foreground">
                     <span>{new Date(event.date).toLocaleDateString()}</span>
                     <span>{event.time}</span>

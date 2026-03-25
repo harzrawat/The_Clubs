@@ -29,6 +29,23 @@ export function TopNav({ onMenuClick }: TopNavProps) {
   }, [isAuthenticated]);
 
   useEffect(() => {
+    const handleRead = (e: CustomEvent) => {
+      setNotifications(prev => prev.map(n => n.id === e.detail ? { ...n, read: true } : n));
+    };
+    const handleReadAll = () => {
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    };
+    
+    window.addEventListener('notification-read', handleRead as EventListener);
+    window.addEventListener('notification-read-all', handleReadAll as EventListener);
+    
+    return () => {
+      window.removeEventListener('notification-read', handleRead as EventListener);
+      window.removeEventListener('notification-read-all', handleReadAll as EventListener);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!showNotifications && !showUserMenu) return;
 
     const onPointerDown = (event: MouseEvent) => {
@@ -53,6 +70,7 @@ export function TopNav({ onMenuClick }: TopNavProps) {
     setNotifications(prev =>
       prev.map(n => (n.id === id ? { ...n, read: true } : n))
     );
+    window.dispatchEvent(new CustomEvent('notification-read', { detail: id }));
   };
 
   return (
@@ -113,8 +131,21 @@ export function TopNav({ onMenuClick }: TopNavProps) {
 
                 {showNotifications && (
                   <div className="absolute right-0 mt-2 w-80 rounded-md border bg-popover text-popover-foreground shadow-md z-50">
-                    <div className="border-b px-2 py-1.5 text-sm font-medium">
-                      Notifications
+                    <div className="flex items-center justify-between border-b px-2 py-1.5 text-sm font-medium">
+                      <span>Notifications</span>
+                      {notifications.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto px-2 py-0.5 text-xs text-muted-foreground hover:bg-accent"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setNotifications([]);
+                          }}
+                        >
+                          Clear All
+                        </Button>
+                      )}
                     </div>
                     {notifications.length === 0 ? (
                       <div className="p-4 text-center text-sm text-muted-foreground">
@@ -185,7 +216,10 @@ export function TopNav({ onMenuClick }: TopNavProps) {
                           setShowUserMenu(false);
                         }}
                       >
-                        <Link to="/dashboard" className="w-full text-left">
+                        <Link 
+                          to={user?.role === 'admin' ? '/admin/dashboard' : user?.role === 'club_head' ? '/my-events' : '/dashboard'} 
+                          className="w-full text-left"
+                        >
                           Dashboard
                         </Link>
                       </button>

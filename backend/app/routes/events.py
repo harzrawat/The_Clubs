@@ -50,9 +50,13 @@ def list_events():
     elif user.role == "student":
         memberships = ClubMember.query.filter_by(user_id=uid).all()
         club_ids = [m.club_id for m in memberships]
-        if not club_ids:
-            return jsonify([]), 200
-        events = Event.query.filter(Event.club_id.in_(club_ids)).order_by(Event.date.desc()).all()
+        # Students see all approved events OR any events from clubs they've joined
+        events = Event.query.filter(
+            db.or_(
+                Event.status == "approved",
+                Event.club_id.in_(club_ids) if club_ids else False
+            )
+        ).order_by(Event.date.desc()).all()
     else:
         events = Event.query.filter_by(status="approved").all()
 

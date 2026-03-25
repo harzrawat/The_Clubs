@@ -13,6 +13,15 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     api.getNotifications().then(setNotifications);
+
+    const handleRead = (e: CustomEvent) => {
+      setNotifications(prev => prev.map(n => n.id === e.detail ? { ...n, read: true } : n));
+    };
+    window.addEventListener('notification-read', handleRead as EventListener);
+    
+    return () => {
+      window.removeEventListener('notification-read', handleRead as EventListener);
+    };
   }, []);
 
   const handleMarkAsRead = (id: string) => {
@@ -20,6 +29,7 @@ export default function NotificationsPage() {
     setNotifications(prev =>
       prev.map(n => (n.id === id ? { ...n, read: true } : n))
     );
+    window.dispatchEvent(new CustomEvent('notification-read', { detail: id }));
   };
 
   const handleMarkAllAsRead = () => {
@@ -29,6 +39,7 @@ export default function NotificationsPage() {
       }
     });
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    window.dispatchEvent(new CustomEvent('notification-read-all'));
   };
 
   const getNotificationIcon = (type: string) => {
