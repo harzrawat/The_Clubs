@@ -1,6 +1,6 @@
 // Reports Page - Admin
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import {
@@ -28,10 +28,14 @@ import {
   Legend,
 } from 'recharts';
 import { toast } from 'sonner';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 export default function ReportsPage() {
   const [selectedYear, setSelectedYear] = useState('2026');
   const [reportData, setReportData] = useState<any>(null);
+
+  const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadReport(parseInt(selectedYear));
@@ -41,8 +45,26 @@ export default function ReportsPage() {
     api.getYearlyReport(year).then(setReportData);
   };
 
-  const handleDownloadReport = () => {
-    toast.success('Report downloaded successfully');
+  const handleDownloadReport = async () => {
+    if (!reportRef.current) return;
+    try {
+      toast.info('Generating PDF...');
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Annual_Report_${selectedYear}.pdf`);
+      toast.success('Report downloaded successfully');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF');
+    }
   };
 
   const COLORS = ['#2563EB', '#4F46E5', '#14B8A6', '#22C55E', '#F59E0B'];
@@ -75,7 +97,7 @@ export default function ReportsPage() {
       </div>
 
       {reportData && (
-        <>
+        <div ref={reportRef} className="pt-4 bg-background">
           {/* Summary Cards */}
           <div className="mb-8 grid gap-6 md:grid-cols-3">
             <Card>
@@ -197,7 +219,7 @@ export default function ReportsPage() {
               </div>
             </CardContent>
           </Card>
-        </>
+        </div>
       )}
     </div>
   );

@@ -92,6 +92,9 @@ def create_event():
 
     eid = f"event-{uuid.uuid4().hex[:12]}"
     created_by = data.get("createdBy") or data.get("created_by") or uid
+    
+    event_status = "approved" if user.role == "admin" else "pending"
+
     ev = Event(
         id=eid,
         title=title,
@@ -100,7 +103,7 @@ def create_event():
         time=data.get("time") or "",
         location=data.get("location") or "",
         club_id=club_id,
-        status="pending",
+        status=event_status,
         created_by=created_by,
         attendance_count=data.get("attendanceCount"),
     )

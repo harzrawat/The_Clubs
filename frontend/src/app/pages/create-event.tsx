@@ -66,7 +66,11 @@ export default function CreateEventPage() {
         ...formData,
         createdBy: user?.id || '',
       });
-      toast.success('Event submitted for approval!');
+      if (user?.role === 'admin') {
+        toast.success('Event created successfully!');
+      } else {
+        toast.success('Event submitted for approval!');
+      }
       navigate('/my-events');
     } catch (error) {
       toast.error('Failed to create event. Please try again.');
@@ -95,7 +99,9 @@ export default function CreateEventPage() {
       <div className="mb-8">
         <h1 className="mb-2">Create New Event</h1>
         <p className="text-muted-foreground">
-          Fill in the details below to submit your event for approval
+          {user?.role === 'admin' 
+            ? 'Fill in the details below to create a new event'
+            : 'Fill in the details below to submit your event for approval'}
         </p>
       </div>
 
@@ -103,7 +109,7 @@ export default function CreateEventPage() {
         <CardHeader>
           <CardTitle>Event Details</CardTitle>
           <CardDescription>
-            All fields are required. Your event will be reviewed by administrators before approval.
+            All fields are required. {user?.role !== 'admin' && 'Your event will be reviewed by administrators before approval.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -207,7 +213,9 @@ export default function CreateEventPage() {
 
             <div className="flex gap-4 pt-4">
               <Button type="submit" className="flex-1" disabled={loading}>
-                {loading ? 'Submitting...' : 'Submit for Approval'}
+                {loading 
+                  ? (user?.role === 'admin' ? 'Creating...' : 'Submitting...') 
+                  : (user?.role === 'admin' ? 'Create Event' : 'Submit for Approval')}
               </Button>
               <Button
                 type="button"

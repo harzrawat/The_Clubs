@@ -29,7 +29,7 @@ def yearly_report():
     if not year:
         year = datetime.now().year
 
-    events = Event.query.all()
+    events = Event.query.filter_by(status="approved").all()
     in_year = []
     for e in events:
         try:
@@ -56,8 +56,6 @@ def yearly_report():
     total_participants = sum(
         (e.attendance_count or 0) for e in in_year if e.attendance_count is not None
     )
-    if total_participants == 0 and total_events > 0:
-        total_participants = total_events * 25
 
     return (
         jsonify(
