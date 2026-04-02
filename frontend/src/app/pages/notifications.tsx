@@ -43,7 +43,16 @@ export default function NotificationsPage() {
   };
 
   const getNotificationIcon = (type: string) => {
-    return '';
+    switch (type) {
+      case 'event_approval':
+        return '📋';
+      case 'announcement':
+        return '📢';
+      case 'event_reminder':
+        return '⏰';
+      default:
+        return '🔔';
+    }
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;

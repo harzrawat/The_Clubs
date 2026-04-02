@@ -98,6 +98,11 @@ def create_club():
         logo=data.get("logo"),
     )
     db.session.add(club)
+    
+    head_user = db.session.get(User, head_id)
+    if head_user:
+        head_user.club_id = cid
+
     db.session.commit()
     return jsonify(club_to_dict(club)), 201
 
@@ -120,7 +125,16 @@ def update_club(cid):
         c.points = int(data["points"])
     if "headId" in data or "head_id" in data:
         hid = data.get("headId") or data.get("head_id")
-        c.head_id = _resolve_head_id(hid) or c.head_id
+        new_head_id = _resolve_head_id(hid) or c.head_id
+        if new_head_id != c.head_id:
+            old_head = db.session.get(User, c.head_id)
+            if old_head and old_head.club_id == c.id:
+                old_head.club_id = None
+            c.head_id = new_head_id
+            new_head = db.session.get(User, new_head_id)
+            if new_head:
+                new_head.club_id = c.id
+
     if "logo" in data:
         c.logo = data.get("logo")
     db.session.commit()
@@ -137,11 +151,20 @@ def delete_club(cid):
     if not c:
         return jsonify({"message": "Not found"}), 404
 
-    ClubMember.query.filter_by(club_id=cid).delete()
-    User.query.filter_by(club_id=cid).update({"club_id": None})
+    ClubMember.query.filter_by(club_id=cid).delete(synchronize_session=False)
+    User.query.filter_by(club_id=cid).update({"club_id": None}, synchronize_session=False)
+    
     for ev in Event.query.filter_by(club_id=cid).all():
-        GalleryImage.query.filter_by(event_id=ev.id).delete()
-    Event.query.filter_by(club_id=cid).delete()
+        GalleryImage.query.filter_by(event_id=ev.id).delete(synchronize_session=False)
+    Event.query.filter_by(club_id=cid).delete(synchronize_session=False)
+
+    from app.models import Notification, NotificationRead
+    notifs = Notification.query.filter_by(club_id=cid).all()
+    if notifs:
+        n_ids = [n.id for n in notifs]
+        NotificationRead.query.filter(NotificationRead.notification_id.in_(n_ids)).delete(synchronize_session=False)
+        Notification.query.filter_by(club_id=cid).delete(synchronize_session=False)
+
     db.session.delete(c)
     db.session.commit()
     return "", 204
