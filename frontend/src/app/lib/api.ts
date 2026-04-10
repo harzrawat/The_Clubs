@@ -209,6 +209,13 @@ export const api = {
     });
   },
 
+  async deleteNotifications(ids: string[] | 'all'): Promise<void> {
+    await request<void>('/notifications/delete', {
+      method: 'DELETE',
+      json: { ids },
+    });
+  },
+
   async getGalleryImages(): Promise<GalleryImage[]> {
     return request<GalleryImage[]>('/gallery', { method: 'GET' });
   },

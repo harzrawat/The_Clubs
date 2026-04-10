@@ -141,6 +141,7 @@ export function TopNav({ onMenuClick }: TopNavProps) {
                           onClick={(e) => {
                             e.stopPropagation();
                             setNotifications([]);
+                            setShowNotifications(false);
                           }}
                         >
                           Clear All

@@ -94,6 +94,15 @@ class NotificationRead(db.Model):
     read = db.Column(db.Boolean, default=False)
 
 
+class NotificationDeleted(db.Model):
+    __tablename__ = "notification_deleted"
+
+    user_id = db.Column(db.String(64), db.ForeignKey("user.id"), primary_key=True)
+    notification_id = db.Column(
+        db.String(64), db.ForeignKey("notification.id"), primary_key=True
+    )
+
+
 class GalleryImage(db.Model):
     __tablename__ = "gallery_image"
 

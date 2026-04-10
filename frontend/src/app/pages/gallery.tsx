@@ -10,6 +10,7 @@ import { Button } from '../components/ui/button';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
 import { Club, Event, GalleryImage } from '../lib/types';
+import { Upload, Image as ImageIcon, X } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Likes stored in localStorage (no backend needed)
@@ -66,6 +67,7 @@ function UploadModal({ open, onClose, onUploaded, role, userClubId }: UploadModa
   const [selectedClubId, setSelectedClubId] = useState('');
   const [selectedEventId, setSelectedEventId] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
 
@@ -74,6 +76,8 @@ function UploadModal({ open, onClose, onUploaded, role, userClubId }: UploadModa
     if (!open) return;
     setError('');
     setFile(null);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
     setSelectedEventId('');
 
     if (role === 'admin') {
@@ -93,6 +97,22 @@ function UploadModal({ open, onClose, onUploaded, role, userClubId }: UploadModa
       setSelectedEventId('');
     }).catch(() => setEvents([]));
   }, [selectedClubId]);
+
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0] ?? null;
+    if (selectedFile) {
+      setFile(selectedFile);
+      const url = URL.createObjectURL(selectedFile);
+      setPreviewUrl(url);
+    }
+  };
+
+  const removeFile = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFile(null);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+  };
 
   async function handleUpload() {
     if (!selectedEventId || !file) { setError('Please select an event and a file.'); return; }
@@ -150,14 +170,62 @@ function UploadModal({ open, onClose, onUploaded, role, userClubId }: UploadModa
           </div>
 
           {/* File picker */}
-          <div className="space-y-1">
+          <div className="space-y-2">
             <label className="text-sm font-medium">Image File</label>
-            <input
-              type="file"
-              accept="image/*"
-              className="w-full text-sm"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            />
+            
+            {!file ? (
+              <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-muted-foreground/25 rounded-lg cursor-pointer hover:bg-accent/50 hover:border-primary/50 transition-all group">
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <Upload className="w-8 h-8 mb-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <p className="mb-1 text-sm text-muted-foreground group-hover:text-foreground">
+                    <span className="font-semibold">Click to upload</span> or drag and drop
+                  </p>
+                  <p className="text-xs text-muted-foreground/60">
+                    SVG, PNG, JPG or GIF (max. 10MB)
+                  </p>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={onFileChange}
+                />
+              </label>
+            ) : (
+              <div className="relative group rounded-lg overflow-hidden border bg-muted/30">
+                <div className="aspect-video relative overflow-hidden flex items-center justify-center">
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  ) : (
+                    <ImageIcon className="w-12 h-12 text-muted-foreground" />
+                  )}
+                  
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="rounded-full"
+                      onClick={removeFile}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="px-3 py-2 flex items-center gap-2 border-t bg-background">
+                  <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-xs font-medium truncate flex-1">
+                    {file.name}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                    {(file.size / 1024 / 1024).toFixed(2)} MB
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}

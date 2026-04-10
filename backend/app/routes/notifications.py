@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from app.extensions import db
-from app.models import Notification, NotificationRead, User
+from app.models import Notification, NotificationRead, NotificationDeleted, User
 from app.serializers import notification_to_dict
 
 bp = Blueprint("notifications", __name__, url_prefix="/api/notifications")
@@ -37,7 +37,16 @@ def list_notifications():
         user_club_ids.update(m.club_id for m in user.memberships)
 
     out = []
+    # Get all deleted notification IDs for this user
+    deleted_ids = {
+        nd.notification_id
+        for nd in NotificationDeleted.query.filter_by(user_id=uid).all()
+    }
+
     for n in rows:
+        if n.id in deleted_ids:
+            continue
+
         if n.type not in allowed:
             continue
             
@@ -52,6 +61,47 @@ def list_notifications():
         read = nr.read if nr else False
         out.append(notification_to_dict(n, read))
     return jsonify(out), 200
+
+
+@bp.route("/delete", methods=["DELETE"])
+@jwt_required()
+def delete_notifications():
+    from flask import request
+    uid = get_jwt_identity()
+    data = request.get_json() or {}
+    nids = data.get("ids")
+
+    if nids == "all":
+        # Delete all eligible notifications by marking them as deleted
+        user = db.session.get(User, uid)
+        allowed = ALLOWED_BY_ROLE.get(user.role, set())
+        user_club_ids = {user.club_id} if user.club_id else set()
+        if user.role == "student":
+            user_club_ids.update(m.club_id for m in user.memberships)
+
+        all_notifs = Notification.query.all()
+        for n in all_notifs:
+            if n.type not in allowed:
+                continue
+            if n.club_id and user.role != "admin" and n.club_id not in user_club_ids:
+                continue
+            
+            # Check if already marked as deleted
+            exists = NotificationDeleted.query.filter_by(user_id=uid, notification_id=n.id).first()
+            if not exists:
+                db.session.add(NotificationDeleted(user_id=uid, notification_id=n.id))
+    
+    elif isinstance(nids, list):
+        for nid in nids:
+            exists = NotificationDeleted.query.filter_by(user_id=uid, notification_id=nid).first()
+            if not exists:
+                db.session.add(NotificationDeleted(user_id=uid, notification_id=nid))
+    
+    else:
+        return jsonify({"message": "Invalid input"}), 400
+
+    db.session.commit()
+    return "", 204
 
 
 @bp.route("/<nid>/read", methods=["PUT"])
