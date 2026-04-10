@@ -2,6 +2,12 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+# Load environment variables early so Config class can access them
+backend_dir = Path(__file__).resolve().parent.parent
+load_dotenv(backend_dir / ".env")
+load_dotenv()  # Fallback to CWD .env
+
 from flask import Flask
 from flask_cors import CORS
 
@@ -18,10 +24,7 @@ from app.routes.users import bp as users_bp
 
 
 def create_app(config_class=Config):
-    load_dotenv()
     backend_dir = Path(__file__).resolve().parent.parent
-    load_dotenv(backend_dir / ".env")
-
     app = Flask(__name__, instance_path=str(backend_dir / "instance"))
     app.config.from_object(config_class)
 

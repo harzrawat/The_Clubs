@@ -138,15 +138,6 @@ export default function LoginPage() {
               <Link to="/signup">Sign up</Link>
             </Button>
           </div>
-
-          <div className="mt-4 rounded-lg bg-muted p-4 text-sm">
-            <p className="font-medium mb-2">Demo Credentials:</p>
-            <ul className="space-y-1 text-muted-foreground">
-              <li>Admin: admin@university.edu</li>
-              <li>Club Head: john@university.edu</li>
-              <li>Student: michael@university.edu</li>
-            </ul>
-          </div>
         </CardContent>
       </Card>
     </div>
