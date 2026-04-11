@@ -139,6 +139,10 @@ export const api = {
     await request<void>(`/clubs/${encodeURIComponent(id)}`, { method: 'DELETE' });
   },
 
+  async getClubMembers(id: string): Promise<User[]> {
+    return request<User[]>(`/clubs/${encodeURIComponent(id)}/members`, { method: 'GET' });
+  },
+
   async getEvents(): Promise<Event[]> {
     return request<Event[]>('/events', { method: 'GET' });
   },

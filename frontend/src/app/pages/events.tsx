@@ -3,12 +3,16 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Calendar, Clock, MapPin } from 'lucide-react';
+import { Calendar, Clock, MapPin, Edit } from 'lucide-react';
 import { api } from '../lib/api';
-import { Event } from '../lib/types';
+import { Event as ClubEvent } from '../lib/types';
+import { useAuth } from '../lib/auth-context';
+import { Button } from '../components/ui/button';
+import { Link } from 'react-router';
 
 export default function EventsPage() {
-  const [events, setEvents] = useState<Event[]>([]);
+  const { user } = useAuth();
+  const [events, setEvents] = useState<ClubEvent[]>([]);
 
   useEffect(() => {
     api.getEvents().then(data => {
@@ -45,8 +49,15 @@ export default function EventsPage() {
             {upcomingEvents.map(event => (
               <Card key={event.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
-                  <div className="mb-2">
+                  <div className="mb-2 flex items-center justify-between">
                     <Badge>{event.clubName}</Badge>
+                    {user?.role === 'admin' && (
+                        <Button variant="ghost" size="sm" asChild>
+                            <Link to={`/edit-event/${event.id}`}>
+                                <Edit className="h-4 w-4" />
+                            </Link>
+                        </Button>
+                    )}
                   </div>
                   <CardTitle>{event.title}</CardTitle>
                   <CardDescription className="line-clamp-2">

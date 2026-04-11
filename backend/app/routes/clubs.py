@@ -6,8 +6,8 @@ from flask_jwt_extended import jwt_required
 
 from app.decorators import role_required
 from app.extensions import db
-from app.models import Club, User
-from app.serializers import club_to_dict
+from app.models import Club, User, ClubMember
+from app.serializers import club_to_dict, user_to_dict
 
 bp = Blueprint("clubs", __name__, url_prefix="/api/clubs")
 
@@ -71,6 +71,38 @@ def get_club(cid):
     return jsonify(club_to_dict(c)), 200
 
 
+@bp.route("/<cid>/members", methods=["GET"])
+@jwt_required()
+def list_club_members(cid):
+    from flask_jwt_extended import get_jwt_identity
+    uid = get_jwt_identity()
+    user = db.session.get(User, uid)
+    if not user:
+        return jsonify({"message": "Unauthorized"}), 401
+    
+    club = db.session.get(Club, cid)
+    if not club:
+        return jsonify({"message": "Not found"}), 404
+    
+    # Permission check:
+    # Admin can see all
+    # Club Head can see their own
+    # Student can see if they are a member
+    is_admin = user.role == "admin"
+    is_head = user.role == "club_head" and user.club_id == cid
+    membership = ClubMember.query.filter_by(user_id=uid, club_id=cid).first()
+    is_member = membership is not None
+    
+    if not (is_admin or is_head or is_member):
+        return jsonify({"message": "Forbidden"}), 403
+    
+    memberships = ClubMember.query.filter_by(club_id=cid).all()
+    user_ids = [m.user_id for m in memberships]
+    users = User.query.filter(User.id.in_(user_ids)).all() if user_ids else []
+    
+    return jsonify([user_to_dict(u) for u in users]), 200
+
+
 @bp.route("", methods=["POST"])
 @jwt_required()
 @role_required("admin")
@@ -102,6 +134,7 @@ def create_club():
     head_user = db.session.get(User, head_id)
     if head_user:
         head_user.club_id = cid
+        head_user.role = "club_head"
 
     db.session.commit()
     return jsonify(club_to_dict(club)), 201
@@ -109,11 +142,19 @@ def create_club():
 
 @bp.route("/<cid>", methods=["PUT"])
 @jwt_required()
-@role_required("admin")
 def update_club(cid):
+    from flask_jwt_extended import get_jwt_identity
+    uid = get_jwt_identity()
+    user = db.session.get(User, uid)
+    if not user:
+        return jsonify({"message": "Unauthorized"}), 401
+
     c = db.session.get(Club, cid)
     if not c:
         return jsonify({"message": "Not found"}), 404
+
+    if user.role != "admin" and (user.role != "club_head" or user.club_id != cid):
+        return jsonify({"message": "Forbidden"}), 403
     data = request.get_json(silent=True) or {}
     if "name" in data:
         c.name = data["name"]
@@ -134,6 +175,13 @@ def update_club(cid):
             new_head = db.session.get(User, new_head_id)
             if new_head:
                 new_head.club_id = c.id
+                new_head.role = "club_head"
+            
+            if old_head:
+                # Check if this user is still a head for ANY other club
+                other_heads = Club.query.filter(Club.head_id == old_head.id, Club.id != cid).first()
+                if not other_heads and old_head.role == "club_head":
+                    old_head.role = "student"
 
     if "logo" in data:
         c.logo = data.get("logo")

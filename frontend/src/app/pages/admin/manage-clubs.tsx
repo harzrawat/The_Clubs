@@ -24,25 +24,44 @@ import {
 } from '../../components/ui/table';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { api } from '../../lib/api';
-import { Club } from '../../lib/types';
+import { Club, User } from '../../lib/types';
 import { toast } from 'sonner';
+import { useAuth } from '../../lib/auth-context';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
 
 export default function ManageClubsPage() {
+  const { user } = useAuth();
   const [clubs, setClubs] = useState<Club[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingClub, setEditingClub] = useState<Club | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     category: '',
+    headId: '',
   });
 
   useEffect(() => {
     loadClubs();
+    api.getUsers().then(setUsers);
   }, []);
 
-  const loadClubs = () => {
-    api.getClubs().then(setClubs);
+  const loadClubs = async () => {
+    const allClubs = await api.getClubs();
+    if (user?.role === 'admin') {
+      setClubs(allClubs);
+    } else if (user?.role === 'club_head' && user.clubId) {
+      setClubs(allClubs.filter(c => c.id === user.clubId));
+    } else {
+        setClubs([]);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,7 +72,7 @@ export default function ManageClubsPage() {
         await api.updateClub(editingClub.id, formData);
         toast.success('Club updated successfully');
       } else {
-        await api.createClub({ ...formData, headId: 'admin' });
+        await api.createClub({ ...formData, headId: formData.headId || 'admin' });
         toast.success('Club created successfully');
       }
       loadClubs();
@@ -69,6 +88,7 @@ export default function ManageClubsPage() {
       name: club.name,
       description: club.description,
       category: club.category,
+      headId: club.headId,
     });
     setDialogOpen(true);
   };
@@ -88,22 +108,47 @@ export default function ManageClubsPage() {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingClub(null);
-    setFormData({ name: '', description: '', category: '' });
+    setFormData({ name: '', description: '', category: '', headId: '' });
   };
+
+  // Eligibility logic:
+  // 1. Not a head of other club
+  // 2. If editing, must be a member of this club (or currently the head)
+  const eligibleStudents = users.filter(u => {
+    if (u.role === 'admin') return false;
+    
+    const isHeadOfOther = clubs.some(c => c.headId === u.id && c.id !== editingClub?.id);
+    if (isHeadOfOther) return false;
+
+    if (editingClub) {
+        // Must be member or current head
+        const isMember = u.joinedClubIds?.includes(editingClub.id);
+        const isCurrentHead = editingClub.headId === u.id;
+        return isMember || isCurrentHead;
+    }
+    
+    return true; // For new club creation, any student not head elsewhere is fine (they'll be assigned)
+  });
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="mb-2">Manage Clubs</h1>
+          <h1 className="mb-2">
+            {user?.role === 'admin' ? 'Manage Clubs' : 'Manage My Club'}
+          </h1>
           <p className="text-muted-foreground">
-            Create, edit, and delete student clubs
+            {user?.role === 'admin' 
+              ? 'Create, edit, and delete student clubs'
+              : 'Update your club details information'}
           </p>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Club
-        </Button>
+        {user?.role === 'admin' && (
+            <Button onClick={() => setDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Club
+            </Button>
+        )}
       </div>
 
       <Card>
@@ -133,14 +178,17 @@ export default function ManageClubsPage() {
                         onClick={() => handleEdit(club)}
                       >
                         <Edit className="h-4 w-4" />
+                        {user?.role !== 'admin' && <span className="ml-2">Edit Details</span>}
                       </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(club.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {user?.role === 'admin' && (
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(club.id)}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -167,6 +215,7 @@ export default function ManageClubsPage() {
                   value={formData.name}
                   onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   required
+                  disabled={user?.role !== 'admin'}
                 />
               </div>
               <div className="space-y-2">
@@ -176,6 +225,7 @@ export default function ManageClubsPage() {
                   value={formData.category}
                   onChange={e => setFormData(prev => ({ ...prev, category: e.target.value }))}
                   required
+                  disabled={user?.role !== 'admin'}
                 />
               </div>
               <div className="space-y-2">
@@ -188,6 +238,33 @@ export default function ManageClubsPage() {
                   required
                 />
               </div>
+
+              {user?.role === 'admin' && (
+                <div className="space-y-2">
+                    <Label htmlFor="headId">Club Head</Label>
+                    <Select
+                    value={formData.headId}
+                    onValueChange={value => setFormData(prev => ({ ...prev, headId: value }))}
+                    >
+                    <SelectTrigger id="headId">
+                        <SelectValue placeholder="Select Club Head" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        {eligibleStudents.map(student => (
+                        <SelectItem key={student.id} value={student.id}>
+                            {student.name} ({student.email.split('@')[0]})
+                        </SelectItem>
+                        ))}
+                    </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                    {editingClub 
+                        ? "Only members who are not heads of other clubs are shown."
+                        : "Students who are not heads of other clubs can be selected."}
+                    </p>
+                </div>
+              )}
             </div>
             <DialogFooter className="mt-6">
               <Button type="button" variant="outline" onClick={handleCloseDialog}>

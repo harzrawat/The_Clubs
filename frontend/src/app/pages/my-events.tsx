@@ -13,21 +13,41 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
-import { Plus, Calendar, Clock, MapPin } from 'lucide-react';
+import {Plus, Calendar, Clock, MapPin, Edit} from 'lucide-react';
 import { api } from '../lib/api';
-import { Event } from '../lib/types';
+import { Event as ClubEvent } from '../lib/types';
 import { useAuth } from '../lib/auth-context';
 
 export default function MyEventsPage() {
   const { user } = useAuth();
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<ClubEvent[]>([]);
 
   useEffect(() => {
     api.getEvents().then(data => {
-      const myEvents = data.filter(e => e.createdBy === user?.id);
-      setEvents(myEvents);
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      let filteredEvents = [];
+      if (user?.role === 'admin') {
+        // Admin sees all unconducted events
+        filteredEvents = data.filter(e => new Date(e.date) >= today);
+      } else if (user?.role === 'club_head' && user.clubId) {
+        // Club Head sees all unconducted events for their club
+        filteredEvents = data.filter(e => e.clubId === user.clubId && new Date(e.date) >= today);
+      } else {
+        // Students or others see events they created (standard fallback)
+        filteredEvents = data.filter(e => e.createdBy === user?.id && new Date(e.date) >= today);
+      }
+      
+      setEvents(filteredEvents);
     });
   }, [user]);
+
+  const canEditEvent = (event: ClubEvent) => {
+    return user?.role === 'admin' || (user?.role === 'club_head' && event.status !== 'approved');
+  };
+
+  const hasEditableEvent = events.some(canEditEvent);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -46,9 +66,13 @@ export default function MyEventsPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="mb-2">My Events</h1>
+          <h1 className="mb-2">
+            {user?.role === 'admin' ? 'Manage System Events' : 'Manage Club Events'}
+          </h1>
           <p className="text-muted-foreground">
-            Manage and track your submitted events
+            {user?.role === 'admin' 
+              ? 'View and manage all upcoming events across campus'
+              : 'Track and manage upcoming events for your club'}
           </p>
         </div>
         <Button asChild>
@@ -89,7 +113,16 @@ export default function MyEventsPage() {
                         {event.clubName}
                       </p>
                     </div>
-                    {getStatusBadge(event.status)}
+                    <div className="flex flex-col items-end gap-2">
+                      {getStatusBadge(event.status)}
+                      {(user?.role === 'admin' || (user?.role === 'club_head' && event.status !== 'approved')) && (
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link to={`/edit-event/${event.id}`}>
+                            <Edit className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
@@ -122,6 +155,7 @@ export default function MyEventsPage() {
                     <TableHead>Time</TableHead>
                     <TableHead>Location</TableHead>
                     <TableHead>Status</TableHead>
+                    {hasEditableEvent && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -139,6 +173,17 @@ export default function MyEventsPage() {
                       <TableCell>{event.time}</TableCell>
                       <TableCell>{event.location}</TableCell>
                       <TableCell>{getStatusBadge(event.status)}</TableCell>
+                      {hasEditableEvent && (
+                        <TableCell className="text-right">
+                          {canEditEvent(event) && (
+                            <Button variant="ghost" size="sm" asChild>
+                              <Link to={`/edit-event/${event.id}`}>
+                                <Edit className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                          )}
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>
