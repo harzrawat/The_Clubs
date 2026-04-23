@@ -121,11 +121,6 @@ export default function LoginPage() {
               )}
             </div>
 
-            <div className="flex items-center justify-between">
-              <Button variant="link" asChild className="px-0">
-                <Link to="/forgot-password">Forgot password?</Link>
-              </Button>
-            </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Logging in...' : 'Login'}
