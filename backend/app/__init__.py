@@ -59,11 +59,4 @@ def create_app(config_class=Config):
 
         seed_if_empty()
 
-        # [TEMPORARY FIX] Restore admin role if it was accidentally changed
-        from app.models import User
-        admin_user = User.query.filter_by(email='admin@university.edu').first()
-        if admin_user and admin_user.role != 'admin':
-            admin_user.role = 'admin'
-            db.session.commit()
-
     return app
